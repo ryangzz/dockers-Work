@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+    php:
+        build:
+            context: ./php # Indica onde está o arquivo Dockerfile
+            dockerfile: Dockerfile
+        container_name: php8.2 # Apelido para o container
+        volumes:
+            - ./src:/var/www/html/ # Irá copiar o conteúdo da pasta src para o container
+        ports: # Mapear as portas para ficarem visiveis na máquina host
+            - "80:80"
+            - "443:443"
+        links: # Criar conexão com o container do banco de dados
+            - mysql
+        networks:
+            - default
+    mysql:
+        image: mysql
+        container_name: mysql-coexa
+        restart: always
+        ports: 
+            - "3306:3306"
+        command: --default-authentication-plugin=mysql_native_password
+        environment:
+            MYSQL_DATABASE: test
+            MYSQL_PASSWORD: test
+            MYSQL_ROOT_PASSWORD: test 
+        volumes:
+            - ./dump:/docker-entrypoint-initdb.d
+            - ./conf:/etc/mysql/conf.d
+            - persistent:/var/lib/mysql
+        networks:
+            - default
+volumes:
+  persistent:

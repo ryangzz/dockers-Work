@@ -1,0 +1,61 @@
+FROM thekingscode/php8.2-apache
+
+# PDO PostgreSQL e MySQL
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils
+RUN apt-get update && apt-get install -y libpq-dev \
+    && docker-php-ext-install pdo  pdo_mysql mysqli
+RUN apt-get update \
+    && apt-get install -y sendmail libpng-dev \
+    && apt-get install -y libzip-dev \
+    && apt-get install -y zlib1g-dev \
+    && apt-get install -y libonig-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && docker-php-ext-install zip
+RUN apt-get update \
+  && apt-get install -y zlib1g-dev libzip-dev wget gnupg \
+  && docker-php-ext-install zip opcache
+
+# Composer install
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+ENV COMPOSER_ALLOW_SUPERUSER 1
+
+
+RUN a2enmod rewrite
+
+# here docker load but the page display an err-server
+# Enable mod_rewrite for images with apache
+#RUN if command -v a2enmod >/dev/null 2>&1; then        a2enmod rewrite headers  ;
+
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public/
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+RUN apt-get install -y libicu-dev
+RUN apt-get update && apt-get install -y libjpeg-dev
+RUN apt-get update && apt-get install -y libfreetype6-dev
+
+# Configurar extensiones de PHP necesarias
+RUN docker-php-ext-install \
+    bcmath \
+    intl \
+    exif \
+    pcntl \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j "$(nproc)" gd
+RUN apt-get update && apt-get install -y libmagickwand-dev --no-install-recommends 
+ #   && pecl install imagick \
+  #  && docker-php-ext-enable imagick
+# RUN apt-get update && apt-get install -y libmagickwand-dev --no-install-recommends && rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && apt-get install -y libmagickwand-dev --no-install-recommends && rm -rf /var/lib/apt/lists/*
+# RUN mkdir -p /usr/src/php/ext/imagick; \
+#     curl -fsSL https://github.com/Imagick/imagick/archive/06116aa24b76edaf6b1693198f79e6c295eda8a9.tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1; \
+#     docker-php-ext-install imagick;
+# RUN apk update && \
+#     apk add --no-cache imagemagick imagemagick-dev
+
+# RUN apk add --no-cache ${PHPIZE_DEPS} imagemagick imagemagick-dev
+
+# RUN pecl install -o -f imagick\
+#     &&  docker-php-ext-enable imagick
+
+# RUN apk del --no-cache ${PHPIZE_DEPS
